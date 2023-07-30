@@ -6,8 +6,11 @@ import {
   useMediaQuery,
   Typography,
   useTheme,
+  InputAdornment
 } from "@mui/material";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import { Formik } from "formik";
 import * as yup from "yup";
 import { useNavigate } from "react-router-dom";
@@ -15,6 +18,7 @@ import { useDispatch } from "react-redux";
 import { setLogin } from "state";
 import Dropzone from "react-dropzone";
 import FlexBetween from "components/FlexBetween";
+// import FileBase from "react-file-base64";
 
 const registerSchema = yup.object().shape({
   firstName: yup.string().required("required"),
@@ -48,6 +52,8 @@ const initialValuesLogin = {
 
 const Form = () => {
   const [pageType, setPageType] = useState("login");
+  const [image , setImage] = useState("");
+  const [isPasswordVisible , setIsPasswordVisible] = useState(false);
   const { palette } = useTheme();
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -57,14 +63,18 @@ const Form = () => {
 
   const register = async (values, onSubmitProps) => {
     // this allows us to send form info with image
+    
     const formData = new FormData();
     for (let value in values) {
       formData.append(value, values[value]);
     }
-    formData.append("picturePath", values.picture.name);
-
+    if(image){
+      const base64 = await convertTobase64(image);
+      formData.append("picturePath", base64);
+    }
+    // formData.append("picturePath", image);
     const savedUserResponse = await fetch(
-      "http://localhost:3001/auth/register",
+      `${process.env.REACT_APP_SERVER_URL}/auth/register`,
       {
         method: "POST",
         body: formData,
@@ -72,29 +82,43 @@ const Form = () => {
     );
     const savedUser = await savedUserResponse.json();
     onSubmitProps.resetForm();
-
     if (savedUser) {
       setPageType("login");
     }
   };
 
+  const convertTobase64 = (file) => {
+    return new Promise((resolve, reject)=>{
+      const fileReader = new FileReader();
+      fileReader.readAsDataURL(file);
+
+      fileReader.onload = () => {
+        resolve(fileReader.result);
+      };
+      fileReader.onerror = (error) => {
+        reject(error);
+      };
+    })
+  };
+
   const login = async (values, onSubmitProps) => {
-    const loggedInResponse = await fetch("http://localhost:3001/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values),
-    });
-    const loggedIn = await loggedInResponse.json();
-    onSubmitProps.resetForm();
-    if (loggedIn) {
-      dispatch(
-        setLogin({
-          user: loggedIn.user,
-          token: loggedIn.token,
-        })
-      );
-      navigate("/home");
-    }
+    
+      const loggedInResponse = await fetch(`${process.env.REACT_APP_SERVER_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+      const loggedIn = await loggedInResponse.json();
+      onSubmitProps.resetForm();
+      if (loggedIn.token) {
+        dispatch(
+          setLogin({
+            user: loggedIn.user,
+            token: loggedIn.token,
+          })
+        );
+        navigate("/home");
+      }
   };
 
   const handleFormSubmit = async (values, onSubmitProps) => {
@@ -182,8 +206,10 @@ const Form = () => {
                   <Dropzone
                     acceptedFiles=".jpg,.jpeg,.png"
                     multiple={false}
-                    onDrop={(acceptedFiles) =>
-                      setFieldValue("picture", acceptedFiles[0])
+                    onDrop={(acceptedFiles) =>{
+                      setFieldValue("picture", acceptedFiles[0]);
+                      setImage(acceptedFiles[0]);
+                    }
                     }
                   >
                     {({ getRootProps, getInputProps }) => (
@@ -205,6 +231,7 @@ const Form = () => {
                       </Box>
                     )}
                   </Dropzone>
+                  {/* <FileBase type="file" multiple={false} onDone={({base64})=>setImage(base64)} /> */}
                 </Box>
               </>
             )}
@@ -219,9 +246,11 @@ const Form = () => {
               helperText={touched.email && errors.email}
               sx={{ gridColumn: "span 4" }}
             />
+            
+           
             <TextField
               label="Password"
-              type="password"
+              type={isPasswordVisible ? "text" : "password"}
               onBlur={handleBlur}
               onChange={handleChange}
               value={values.password}
@@ -229,7 +258,20 @@ const Form = () => {
               error={Boolean(touched.password) && Boolean(errors.password)}
               helperText={touched.password && errors.password}
               sx={{ gridColumn: "span 4" }}
-            />
+              InputProps={{ 
+                endAdornment: (
+                  <InputAdornment position="end">
+                    {isPasswordVisible ? <VisibilityIcon onClick={()=>setIsPasswordVisible(!isPasswordVisible)} sx={{cursor:"pointer"}}/>
+                    : <VisibilityOffIcon onClick={()=>setIsPasswordVisible(!isPasswordVisible)} sx={{cursor:"pointer"}}/>}
+                  </InputAdornment>
+                )
+              }}
+              />
+            {/* {isPasswordVisible ? <VisibilityIcon onClick={()=>setIsPasswordVisible(!isPasswordVisible)} />
+              
+              : <VisibilityOffIcon onClick={()=>setIsPasswordVisible(!isPasswordVisible)} />} */}
+          
+            
           </Box>
 
           {/* BUTTONS */}

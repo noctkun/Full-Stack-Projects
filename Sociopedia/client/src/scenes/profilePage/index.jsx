@@ -11,11 +11,12 @@ import UserWidget from "scenes/widgets/UserWidget";
 const ProfilePage = () => {
   const [user, setUser] = useState(null);
   const { userId } = useParams();
+  const {_id} = useSelector((state)=> state.user);
   const token = useSelector((state) => state.token);
   const isNonMobileScreens = useMediaQuery("(min-width:1000px)");
 
   const getUser = async () => {
-    const response = await fetch(`http://localhost:3001/users/${userId}`, {
+    const response = await fetch(`${process.env.REACT_APP_SERVER_URL}/users/${userId}`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -42,15 +43,15 @@ const ProfilePage = () => {
         <Box flexBasis={isNonMobileScreens ? "26%" : undefined}>
           <UserWidget userId={userId} picturePath={user.picturePath} />
           <Box m="2rem 0" />
-          <FriendListWidget userId={userId} />
+          {userId===_id && <FriendListWidget userId={userId} />}
         </Box>
-        <Box
-          flexBasis={isNonMobileScreens ? "42%" : undefined}
-          mt={isNonMobileScreens ? undefined : "2rem"}
-        >
-          <MyPostWidget picturePath={user.picturePath} />
-          <Box m="2rem 0" />
+        <Box m="2rem 0" />
+        <Box flexBasis={isNonMobileScreens ? "50%" : undefined}>
+          {userId===_id && <Box mb={isNonMobileScreens ? "4rem" : "0rem"}><MyPostWidget picturePath={user.picturePath} /></Box>}
+        <Box mt={isNonMobileScreens ? "-2rem" : "0rem"}
+          >
           <PostsWidget userId={userId} isProfile />
+          </Box>
         </Box>
       </Box>
     </Box>

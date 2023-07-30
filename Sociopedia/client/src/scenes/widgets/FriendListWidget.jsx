@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setFriends } from "state";
 
+
 const FriendListWidget = ({ userId }) => {
   const dispatch = useDispatch();
   const { palette } = useTheme();
@@ -13,7 +14,7 @@ const FriendListWidget = ({ userId }) => {
 
   const getFriends = async () => {
     const response = await fetch(
-      `http://localhost:3001/users/${userId}/friends`,
+      `${process.env.REACT_APP_SERVER_URL}/users/${userId}/friends`,
       {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
@@ -38,7 +39,7 @@ const FriendListWidget = ({ userId }) => {
         Friend List
       </Typography>
       <Box display="flex" flexDirection="column" gap="1.5rem">
-        {friends.map((friend) => (
+        {friends.length ? friends.map((friend) => (
           <Friend
             key={friend._id}
             friendId={friend._id}
@@ -46,7 +47,7 @@ const FriendListWidget = ({ userId }) => {
             subtitle={friend.occupation}
             userPicturePath={friend.picturePath}
           />
-        ))}
+        )):null}
       </Box>
     </WidgetWrapper>
   );
